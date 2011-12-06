@@ -7,7 +7,7 @@ package ru.panov.andy;
  * @author Andrey Panov
  */
 public class OberbekWheel {
-    /* Радиус вала, в метрах */
+    /* Радиус шкива, в метрах */
     double valRadius = 0.1d;
     /* Масса вала, в кг */
     double valMassa = 0.5d;
@@ -25,11 +25,12 @@ public class OberbekWheel {
 
     int dopcargoCount = 0; //количество дополнительных грузов
     double dopcargoMassa = 0.1d; //вес дополнительных грузов
+    double dopcargoRadius = 0.05d; //удаление грузов от центра, считаем что это минимальное расстояние
 
     public OberbekWheel() {
     }
 
-    public OberbekWheel(double valRadius, double valMassa, double rodLenght, double rodMassa, double cargoMassa, int dopcargoCount, double dopcargoMassa) {
+    public OberbekWheel(double valRadius, double valMassa, double rodLenght, double rodMassa, double cargoMassa, int dopcargoCount, double dopcargoMassa, double dopcargoRadius) {
         this.valRadius = valRadius;
         this.valMassa = valMassa;
         this.rodLenght = rodLenght;
@@ -37,6 +38,7 @@ public class OberbekWheel {
         this.cargoMassa = cargoMassa;
         this.dopcargoCount = dopcargoCount;
         this.dopcargoMassa = dopcargoMassa;
+        this.dopcargoRadius = dopcargoRadius;
     }
 
     /**
@@ -46,7 +48,7 @@ public class OberbekWheel {
      * @return
      */
     public double getJwheel() {
-        return getJCilinder(valMassa, valRadius) + getJRods(rodMassa, rodLenght) + getJDop(dopcargoCount, dopcargoMassa, valRadius);
+        return getJCilinder(valMassa, valRadius) + getJRods(rodMassa, rodLenght) + getJDop(dopcargoCount, dopcargoMassa, dopcargoRadius);
     }
 
     /**
@@ -128,6 +130,21 @@ public class OberbekWheel {
         return getAtg() * t * t / 2d;
     }
 
+    /**
+     * Для теста лабораторной
+     *
+     * @param t
+     * @return
+     */
+    public double getMoment(double t) {
+
+        //double chis = 2 * getHcargo(t);
+        //double drob = chis / (t * t);
+        //double raznost = g - drob;
+        //return cargoMassa * valRadius * raznost;
+        return cargoMassa * valRadius * (g - (2 * getHcargo(t) / (t * t)));
+    }
+
     public void setValRadius(double valRadius) {
         this.valRadius = valRadius;
     }
@@ -178,5 +195,13 @@ public class OberbekWheel {
 
     public static double getG() {
         return g;
+    }
+
+    public double getDopcargoRadius() {
+        return dopcargoRadius;
+    }
+
+    public void setDopcargoRadius(double dopcargoRadius) {
+        this.dopcargoRadius = dopcargoRadius;
     }
 }

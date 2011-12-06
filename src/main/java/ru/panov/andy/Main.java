@@ -23,8 +23,10 @@ public class Main {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 MFrame main = new MFrame();
-                main.createBufferStrategy(2); //не работает кажется                
+                main.createBufferStrategy(2); //не работает кажется
+                main.pack();
                 main.setVisible(true);
+
             }
         });
     }

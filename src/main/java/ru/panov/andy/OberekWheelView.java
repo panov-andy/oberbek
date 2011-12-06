@@ -2,10 +2,7 @@ package ru.panov.andy;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Line2D;
+import java.awt.geom.*;
 
 /**
  * @author Andrey Panov
@@ -44,6 +41,10 @@ public class OberekWheelView extends JPanel implements Runnable {
 
     public OberekWheelView(OberbekWheel wheelModel) {
         this.wheelModel = wheelModel;
+
+        this.dopcargoRadiusLen = getDopCargoRadius(); //переводим в местное измерение, в пиксели
+        this.shkifDiam = getShkifDiam();
+
         initWheel();
         initCargo();
         initLine2();
@@ -53,9 +54,10 @@ public class OberekWheelView extends JPanel implements Runnable {
 
     int x = 100; //координаты центра
     int y = 100; //координаты центра
-    int speed = 0;
-    int valDiam = 30; //диаметр вала
-    int spicaLen = 60;
+    int valDiam = 20; //диаметр вала
+    int shkifDiam; //диаметр шкива
+    int spicaLen = 80;
+    int dopcargoRadiusLen;
     double angel = 0;
 
     int gh = 10; //высота груза
@@ -68,6 +70,7 @@ public class OberekWheelView extends JPanel implements Runnable {
     int carcoL = 30;
     double cargoH; //высота в сантимертарах, на которой находится груз
 
+    Ellipse2D.Double shkif;
     Ellipse2D.Double center;
     Ellipse2D.Double center2;
     Rectangle cargo; //груз
@@ -85,13 +88,23 @@ public class OberekWheelView extends JPanel implements Runnable {
         //координаты - верхний левый угол, если эллипс в центре прямоугольника
         center = new Ellipse2D.Double(x - valDiam / 2, y - valDiam / 2, valDiam, valDiam);
         center2 = new Ellipse2D.Double(cargoX + carcoL / 2 - 10, scaleOffset - 20, 10, 10);
-        line1 = new Line2D.Double(x - valDiam / 2 + 4.5, y - valDiam / 2 + 4.5, cargoX + carcoL / 2 - 10 + 1.5, scaleOffset - 20 + 1.5);
+
+        //нужно исключительно, что выяснить точку прикрепления нити к шкиву
+        Rectangle temppoint = new Rectangle(x,y- getShkifDiam() / 2,1,1);
+        AffineTransform tx = new AffineTransform();
+        tx.rotate(Math.toRadians(-30),x,y);
+        Shape tp = tx.createTransformedShape(temppoint);
+
+        shkif = new Ellipse2D.Double(x - getShkifDiam() / 2, y - getShkifDiam() / 2, getShkifDiam(), getShkifDiam());
+//        line1 = new Line2D.Double(x - getShkifDiam() / 2 + 4.5, y - getShkifDiam() / 2 + 4.5, cargoX + carcoL / 2 - 10 + 1.5, scaleOffset - 20 + 1.5);
+        line1 = new Line2D.Double(tp.getBounds().getCenterX(), tp.getBounds().getCenterY(), cargoX + carcoL / 2 - 10 + 1.5, scaleOffset - 20 + 1.5);
+
 
         //стержень вверх
         Line2D linup = new Line2D.Double(x, y - valDiam / 2, x, y - spicaLen);
         path.append(linup, false);
 
-        Rectangle recup = new Rectangle(x - gl / 2, y - spicaLen - gh, gl, gh);
+        Rectangle recup = new Rectangle(x - gl / 2, y - getDopCargoRadius() - gh, gl, gh);
         if (wheelModel.getDopcargoCount() > 0)
             path.append(recup, false);
 
@@ -100,7 +113,7 @@ public class OberekWheelView extends JPanel implements Runnable {
         path.append(lindown, false);
 
         //вес снизу
-        Rectangle recdown = new Rectangle(x - gl / 2, y + spicaLen, gl, gh);
+        Rectangle recdown = new Rectangle(x - gl / 2, y + getDopCargoRadius(), gl, gh);
         if (wheelModel.getDopcargoCount() > 0)
             path.append(recdown, false);
 
@@ -109,7 +122,7 @@ public class OberekWheelView extends JPanel implements Runnable {
         path.append(linleft, false);
 
         //вес слева
-        Rectangle recleft = new Rectangle(x - spicaLen - gh, y - gl / 2, gh, gl);
+        Rectangle recleft = new Rectangle(x - getDopCargoRadius() - gh, y - gl / 2, gh, gl);
         if (wheelModel.getDopcargoCount() > 2)
             path.append(recleft, false);
 
@@ -118,7 +131,7 @@ public class OberekWheelView extends JPanel implements Runnable {
         path.append(linrig, false);
 
         //вес справа
-        Rectangle recrig = new Rectangle(x + spicaLen, y - gl / 2, gh, gl);
+        Rectangle recrig = new Rectangle(x + getDopCargoRadius(), y - gl / 2, gh, gl);
         if (wheelModel.getDopcargoCount() > 2)
             path.append(recrig, false);
     }
@@ -128,6 +141,7 @@ public class OberekWheelView extends JPanel implements Runnable {
     }
 
     private void initLine2() {
+        //линия, которая идет к грузу
         line2 = new Line2D.Double(cargoX + carcoL / 2, scaleOffset - 15, cargoX + carcoL / 2, h2x(cargoH));
     }
 
@@ -144,14 +158,11 @@ public class OberekWheelView extends JPanel implements Runnable {
         int lenX = 20;
         //сверху и снизу отступаем одинаково
         double h1 = this.getSize().getHeight() - scaleOffset * 2;
-        int scale10Step = (int) Math.round(h1 / (scaleLen / 10));
-        int scale1Step = (int) Math.round(h1 / (scaleLen));
 
         scale = new GeneralPath();
         //каждые 10
 
         for (int i = 0; i <= scaleLen; i++) {
-            //грех над таким смеятся! :)
             if (i % 10 == 0) {
                 scale.append(new Line2D.Double(baseX - 20, h2x(i), baseX + lenX, h2x(i)), false);
                 g2.drawString(i + " см", baseX + lenX + 3, (int) h2x(i));
@@ -171,6 +182,7 @@ public class OberekWheelView extends JPanel implements Runnable {
         temp.append(shape, false);
         temp.append(center, false);
         temp.append(center2, false);
+        temp.append(shkif, false);
         temp.append(line1, false);
 
         g2.draw(temp);
@@ -216,4 +228,13 @@ public class OberekWheelView extends JPanel implements Runnable {
         inprogress = false;
     }
 
+    private int getDopCargoRadius() {
+        //переводим метры в пиксели
+        return (int) (wheelModel.getDopcargoRadius() * 200);
+    }
+
+    public int getShkifDiam() {
+        //переводим метры в пиксели, на 400 т.к. нужен диаметр
+        return (int) (wheelModel.getValRadius() * 400);
+    }
 }
